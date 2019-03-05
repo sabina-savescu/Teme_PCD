@@ -8,12 +8,13 @@ BUFFER_SIZE = 1024
 PATH = "server_cats"
 
 class Server(Thread):
-    def __init__(self,protocol):
+    def __init__(self,protocol,type):
         Thread.__init__(self)
         self.protocol=protocol
+        self.type=type
 
     def run(self):
-        if (self.protocol == "udp"):
+        if self.protocol=="udp" :
             self.udp_server()
         else:
             self.tcp_server()
@@ -23,7 +24,7 @@ class Server(Thread):
         server_sock.bind((HOST, PORT))
 
         #set number of connections
-        server_sock.listen(1)
+        server_sock.listen(5)
         print ('Server TCP listening....')
 
         client_no = 0
@@ -32,11 +33,15 @@ class Server(Thread):
             client_no+=1
             messages_no = 0
             total_data=0
+
             print("Client number:",client_no,", got connection from ", addr)
 
-            try:
-                while True:
+
+            while True:
+                try:
                     file_size=conn.recv(4)
+                    if not file_size:
+                        break
                     file_size = int.from_bytes(file_size, byteorder='big')
 
                     file_name = conn.recv(16)
@@ -48,20 +53,29 @@ class Server(Thread):
                     while (data_recv<file_size):
 
                         data = conn.recv(BUFFER_SIZE)
-                        file.write(data)
+                        if not data:
+                            break
+                        else:
+                            if self.type=="ack":
+                                conn.sendall("ack".encode())
+                            file.write(data)
+                            data_recv+=len(data)
+                            messages_no += 1
 
-                        messages_no += 1
-                        data_recv+=len(data)
-
-                    #entire file has been sent
-                    conn.send("ack".encode())
                     total_data+=data_recv
                     file.close()
 
-            except socket.error:
-                conn.close()
-                print('Server received', round(total_data/pow(1024,2),2), "MB")
-                print('Server received', messages_no, "messages")
+                    if self.type=="noack":
+                        conn.sendall("sent".encode())
+
+                except socket.error:
+                    print("Socket error")
+                    break
+
+            conn.close()
+            print("Connection closed.")
+            print('Server received', round(total_data/pow(1024,2),2), "MB")
+            print('Server received', messages_no, "messages")
 
 
 
@@ -72,13 +86,37 @@ class Server(Thread):
         print("Server UDP")
         messages_no = 0
         total_data = 0
-        server_sock.settimeout(4)
+        server_sock.settimeout(5)
+
         while True:
             try:
-                data = server_sock.recvfrom(BUFFER_SIZE)[0]
+                data, addr = server_sock.recvfrom(BUFFER_SIZE)
+                if self.type=="ack":
+                    server_sock.sendto("ack".encode(), addr)
                 messages_no += 1
                 total_data += len(data)
+
             except socket.error:
                 print('Server received', round(total_data / pow(1024, 2), 2), "MB")
                 print('Server received', messages_no, "messages")
-                break
+
+
+
+# print("Choose protocol:\n1. UDP\n2. TCP")
+# protocol=input()
+#
+# print("Choose type:\n1. With ACK\n2. No ACK")
+# type=input()
+#
+# if protocol=="1":
+#     if type=="1" :
+#         server = Server("udp","ack")
+#     else:
+#         server = Server("udp", "noack")
+# else:
+#     if type == "1":
+#         server = Server("tcp","ack")
+#     else:
+#         server = Server("tcp", "noack")
+#
+# server.start()
