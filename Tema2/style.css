@@ -1,0 +1,15 @@
+body {
+  padding: 50px;
+  background: hsl(0, 0%, 100%) url(/images/image.jpg) no-repeat right top;
+  background-size:cover;
+  min-height:600px;
+}
+
+.users,.state{
+  float:right;
+}
+
+button{
+  margin-bottom:20px;
+}
+
