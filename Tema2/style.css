@@ -1,7 +1,5 @@
 body {
   padding: 50px;
-  background: hsl(0, 0%, 100%) url(/images/image.jpg) no-repeat right top;
-  background-size:cover;
   min-height:600px;
 }
 
@@ -11,5 +9,12 @@ body {
 
 button{
   margin-bottom:20px;
+ 
+}
+td{
+  cursor:pointer;
 }
 
+table{
+  margin-top:20px;
+}

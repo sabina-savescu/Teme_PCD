@@ -1,12 +1,16 @@
 
+var websocket = new WebSocket("ws://127.0.0.1:8081/");;
 $(document).ready(function () {
-    var select = document.querySelector('.select'),
+    var enter = document.querySelector('.enter'),
         users = document.querySelector('.users'),
-        websocket = new WebSocket("ws://127.0.0.1:8081/");
+        response = document.querySelector('.response'),
+        url = document.getElementById("search").value
+        ;
 
-    select.onclick = function (event){
-        websocket.send(JSON.stringify({ action: 'select' }));
+    enter.onclick = function (event) {
+        websocket.send(JSON.stringify({ action: "search", url: url }));
     }
+
     websocket.onopen = function () {
         websocket.send(JSON.stringify({ action: 'options' }));
     }
@@ -21,12 +25,16 @@ $(document).ready(function () {
                     data.count.toString() + " user" +
                     (data.count == 1 ? "" : "s")) + " online";
                 break;
+            case 'response':
+                response.textContent = data.value;
+                break;
             default:
                 console.error(
                     "unsupported event", data);
         }
     };
 });
+
 function generateDynamicTable() {
     var Table = document.getElementById("rows");
     Table.innerHTML = "";
@@ -44,5 +52,16 @@ function generateDynamicTable() {
             document.getElementById("rows").appendChild(newRow);
         }
 
+        //get row
+        $("#options tr").click(function () {
+            $(this).addClass('selected').siblings().removeClass('selected');
+            var ip = $(this).find('td:first').html();
+            var port = $(this).find('td').eq(1).html();
+            var opt = $(this).find('td').eq(2).html();
+            if (opt == "Yes") {
+                alert("Please choose another address.")
+            }
+            websocket.send(JSON.stringify({ action: ip + ":" + port }));
+        });
     }
 }
